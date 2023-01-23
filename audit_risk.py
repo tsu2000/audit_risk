@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import altair as alt
+import plotly.graph_objects as go
 
 import io
 import requests
@@ -20,6 +21,24 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
+
+def report_table(data):
+    data = data.rename(index = {'0': '0 (Non-fraud)', '1': '1 (Fraud)', 'accuracy': 'Accuracy', 'macro avg': 'Macro Average', 'weighted avg': 'Weighted Average'}).round(4)
+    fig = go.Figure(data = [go.Table(columnwidth = [2, 1.75],
+                            header = dict(values = ['Metric', 'Precision', 'Recall', 'F1 Score', 'Support'],
+                                            fill_color = 'navy',
+                                            line_color = 'black',
+                                            font = dict(color = 'white', size = 14),
+                                            height = 27.5),
+                                cells = dict(values = [data.index, data['precision'], data['recall'], data['f1-score'], data['support']], 
+                                            fill_color = [['gainsboro']*2 + ['palegreen'] + ['gainsboro']*2, ['lightblue']*2 + ['palegreen'] + ['lightblue']*2],
+                                            line_color = 'black',
+                                            align = ['right', 'center'],
+                                            font = dict(color = [['black'], ['navy']*2 + ['darkgreen'] + ['navy']*2], 
+                                                        size = [14, 14]),
+                                            height = 27.5))])
+    fig.update_layout(height = 180, width = 800, margin = dict(l = 5, r = 5, t = 5, b = 5))
+    return st.plotly_chart(fig, use_container_width = True)
 
 
 def main():
@@ -88,6 +107,17 @@ def eda(cleaned_data):
 
     st.write('')
 
+    with st.sidebar:
+        st.markdown('# 📈 &nbsp; DataFrame Information')
+        st.markdown('### Brief Overview of Certain Features')
+        st.markdown('- `Sector_score`: Historical risk score value of the firm using analytical procedures.')
+        st.markdown('- `PARA_A`: Discrepancy found in planned expenditures.')
+        st.markdown('- `PARA_B`: Discrepancy found in unplanned expenditures.')
+        st.markdown('- `TOTAL`: Total amount of discrepancy found in other reports.')
+        st.markdown('- `numbers`: Historical discrepancy score.')
+        st.markdown('- `Money_Value`: Amount of money involved in misstatements in the past audits.')
+        st.markdown('- `Risk`: Whether the firm is fraudulent or not. (1 being fraudulent and 0 being not)')
+
     st.markdown('### Initial DataFrame:')
     st.dataframe(cleaned_data)
     st.write(f'Shape of data:', cleaned_data.shape)
@@ -153,10 +183,11 @@ def knn_model(data, target):
 
     st.write('')
 
-    st.markdown('### 🔢 &nbsp; User Inputs')
-    selected_size = st.slider('Select test size:', min_value = 0.2, max_value = 0.35, value = 0.25)
-    selected_neighbours = st.number_input('Select number of neighbours:', min_value = 1, max_value = 20, value = 3)
-    selected_cv = st.radio('Select number of K-Fold cross-validations:', [None, 3, 5, 10, 15, 20, 25, 30], index = 2, horizontal = True)
+    with st.sidebar:
+        st.markdown('# 🔢 &nbsp; User Inputs')
+        selected_size = st.slider('Select test size:', min_value = 0.15, max_value = 0.35, value = 0.25)
+        selected_neighbours = st.slider('Select number of neighbours:', min_value = 1, max_value = 20, value = 3)
+        selected_cv = st.slider('Select number of K-Fold cross-validations:', min_value = 2, max_value = 30, value = 5)
 
     X_train, X_test, y_train, y_test = train_test_split(data, target, test_size = selected_size)
 
@@ -165,20 +196,19 @@ def knn_model(data, target):
     knn.fit(X_train, y_train)
 
     # Show results
-    st.markdown('---')
     st.markdown('### 📊 &nbsp; Results')
-    st.markdown(f'Model Accuracy Score: &emsp; **:red[{knn.score(X_test, y_test)}]**')
-    if selected_cv != None:
-        st.markdown(f'Cross-Validation Score (k = {selected_cv}): &nbsp; **:blue[{np.mean(cross_val_score(knn, data, target, cv = selected_cv))}]**')
+    st.markdown(f'- Model Accuracy Score: &emsp; **:red[{knn.score(X_test, y_test)}]**')
+    st.markdown(f'- Cross-Validation Score (k = {selected_cv}): &nbsp; **:blue[{np.mean(cross_val_score(knn, data, target, cv = selected_cv))}]**')
+
+    st.write('')
 
     # Create classification report
     y_pred = knn.predict(X_test)
     report = classification_report(y_test, y_pred, output_dict = True)
     df = pd.DataFrame(report).transpose()
-
-    st.dataframe(pd.DataFrame(index = [0, 1], data = {'Label': ['Non-fraudulent firm', 'Fraudulent firm']}))
+    
     st.markdown('##### Classification Report:')
-    st.dataframe(df, use_container_width = True)
+    report_table(df)
 
     st.markdown('---')
     
@@ -188,9 +218,10 @@ def nb_model(data, target):
 
     st.write('')
 
-    st.markdown('### 🔢 &nbsp; User Inputs')
-    selected_size = st.slider('Select test size:', min_value = 0.2, max_value = 0.35, value = 0.25)
-    selected_cv = st.radio('Select number of K-Fold cross-validations:', [None, 3, 5, 10, 15, 20, 25, 30], index = 2, horizontal = True)
+    with st.sidebar:
+        st.markdown('### 🔢 &nbsp; User Inputs')
+        selected_size = st.slider('Select test size:', min_value = 0.15, max_value = 0.35, value = 0.25)
+        selected_cv = st.slider('Select number of K-Fold cross-validations:', min_value = 2, max_value = 30, value = 5)
 
     X_train, X_test, y_train, y_test = train_test_split(data, target, test_size = selected_size)
 
@@ -199,32 +230,32 @@ def nb_model(data, target):
     nb.fit(X_train, y_train)
 
     # Show results
-    st.markdown('---')
     st.markdown('### 📊 &nbsp; Results')
-    st.markdown(f'Model Accuracy Score: &emsp; **:red[{nb.score(X_test, y_test)}]**')
-    if selected_cv != None:
-        st.markdown(f'Cross-Validation Score (k = {selected_cv}): &nbsp; **:blue[{np.mean(cross_val_score(nb, data, target, cv = selected_cv))}]**')
+    st.markdown(f'- Model Accuracy Score: &emsp; **:red[{nb.score(X_test, y_test)}]**')
+    st.markdown(f'- Cross-Validation Score (k = {selected_cv}): &nbsp; **:blue[{np.mean(cross_val_score(nb, data, target, cv = selected_cv))}]**')
+
+    st.write('')
 
     # Create classification report
     y_pred = nb.predict(X_test)
     report = classification_report(y_test, y_pred, output_dict = True)
     df = pd.DataFrame(report).transpose()
 
-    st.dataframe(pd.DataFrame(index = [0, 1], data = {'Label': ['Non-fraudulent firm', 'Fraudulent firm']}))
     st.markdown('##### Classification Report:')
-    st.dataframe(df, use_container_width = True)
+    report_table(df)
 
     st.markdown('---')
 
 
 def lr_model(data, target):
-    st.markdown('## ✌️ &nbsp; Logistic Regression Algorithm')
+    st.markdown('## 🪵 &nbsp; Logistic Regression Algorithm')
 
     st.write('')
 
-    st.markdown('### 🔢 &nbsp; User Inputs')
-    selected_size = st.slider('Select test size:', min_value = 0.2, max_value = 0.35, value = 0.25)
-    selected_cv = st.radio('Select number of K-Fold cross-validations:', [None, 3, 5, 10, 15, 20, 25, 30], index = 2, horizontal = True)
+    with st.sidebar:
+        st.markdown('# 🔢 &nbsp; User Inputs')
+        selected_size = st.slider('Select test size:', min_value = 0.15, max_value = 0.35, value = 0.25)
+        selected_cv = st.slider('Select number of K-Fold cross-validations:', min_value = 2, max_value = 30, value = 5)
 
     X_train, X_test, y_train, y_test = train_test_split(data, target, test_size = selected_size)
 
@@ -233,20 +264,19 @@ def lr_model(data, target):
     lr.fit(X_train, y_train)
 
     # Show results
-    st.markdown('---')
     st.markdown('### 📊 &nbsp; Results')
-    st.markdown(f'Model Accuracy Score: &emsp; **:red[{lr.score(X_test, y_test)}]**')
-    if selected_cv != None:
-        st.markdown(f'Cross-Validation Score (k = {selected_cv}): &nbsp; **:blue[{np.mean(cross_val_score(lr, data, target, cv = selected_cv))}]**')
+    st.markdown(f'- Model Accuracy Score: &emsp; **:red[{lr.score(X_test, y_test)}]**')
+    st.markdown(f'- Cross-Validation Score (k = {selected_cv}): &nbsp; **:blue[{np.mean(cross_val_score(lr, data, target, cv = selected_cv))}]**')
+
+    st.write('')
 
     # Create classification report
     y_pred = lr.predict(X_test)
     report = classification_report(y_test, y_pred, output_dict = True)
     df = pd.DataFrame(report).transpose()
 
-    st.dataframe(pd.DataFrame(index = [0, 1], data = {'Label': ['Non-fraudulent firm', 'Fraudulent firm']}))
     st.markdown('##### Classification Report:')
-    st.dataframe(df, use_container_width = True)
+    report_table(df)
 
     st.markdown('---')
 
@@ -256,9 +286,10 @@ def svm_model(data, target):
 
     st.write('')
 
-    st.markdown('### 🔢 &nbsp; User Inputs')
-    selected_size = st.slider('Select test size:', min_value = 0.2, max_value = 0.35, value = 0.25)
-    selected_cv = st.radio('Select number of K-Fold cross-validations:', [None, 3, 5, 10, 15, 20, 25, 30], index = 2, horizontal = True)
+    with st.sidebar:
+        st.markdown('# 🔢 &nbsp; User Inputs')
+        selected_size = st.slider('Select test size:', min_value = 0.15, max_value = 0.35, value = 0.25)
+        selected_cv = st.slider('Select number of K-Fold cross-validations:', min_value = 2, max_value = 30, value = 5)
 
     X_train, X_test, y_train, y_test = train_test_split(data, target, test_size = selected_size)
 
@@ -267,20 +298,19 @@ def svm_model(data, target):
     svm.fit(X_train, y_train)
 
     # Show results
-    st.markdown('---')
     st.markdown('### 📊 &nbsp; Results')
-    st.markdown(f'Model Accuracy Score: &emsp; **:red[{svm.score(X_test, y_test)}]**')
-    if selected_cv != None:
-        st.markdown(f'Cross-Validation Score (k = {selected_cv}): &nbsp; **:blue[{np.mean(cross_val_score(svm, data, target, cv = selected_cv))}]**')
+    st.markdown(f'- Model Accuracy Score: &emsp; **:red[{svm.score(X_test, y_test)}]**')
+    st.markdown(f'- Cross-Validation Score (k = {selected_cv}): &nbsp; **:blue[{np.mean(cross_val_score(svm, data, target, cv = selected_cv))}]**')
+
+    st.write('')
 
     # Create classification report
     y_pred = svm.predict(X_test)
     report = classification_report(y_test, y_pred, output_dict = True)
     df = pd.DataFrame(report).transpose()
 
-    st.dataframe(pd.DataFrame(index = [0, 1], data = {'Label': ['Non-fraudulent firm', 'Fraudulent firm']}))
     st.markdown('##### Classification Report:')
-    st.dataframe(df, use_container_width = True)
+    report_table(df)
 
     st.markdown('---')
 
@@ -290,10 +320,11 @@ def rf_model(data, target):
 
     st.write('')
 
-    st.markdown('### 🔢 &nbsp; User Inputs')
-    selected_size = st.slider('Select test size:', min_value = 0.2, max_value = 0.35, value = 0.25)
-    selected_estimators = st.number_input('Select number of trees in Random Forest model:', min_value = 1, max_value = 350, value = 20)
-    selected_cv = st.radio('Select number of K-Fold cross-validations:', [None, 3, 5, 10, 15, 20, 25, 30], index = 2, horizontal = True)
+    with st.sidebar:
+        st.markdown('# 🔢 &nbsp; User Inputs')
+        selected_size = st.slider('Select test size:', min_value = 0.15, max_value = 0.35, value = 0.25)
+        selected_estimators = st.slider('Select number of trees in Random Forest model:', min_value = 1, max_value = 50, value = 20)
+        selected_cv = st.slider('Select number of K-Fold cross-validations:', min_value = 2, max_value = 30, value = 5)
 
     X_train, X_test, y_train, y_test = train_test_split(data, target, test_size = selected_size)
 
@@ -302,20 +333,19 @@ def rf_model(data, target):
     rf.fit(X_train, y_train)
 
     # Show results
-    st.markdown('---')
     st.markdown('### 📊 &nbsp; Results')
-    st.markdown(f'Model Accuracy Score: &emsp; **:red[{rf.score(X_test, y_test)}]**')
-    if selected_cv != None:
-        st.markdown(f'Cross-Validation Score (k = {selected_cv}): &nbsp; **:blue[{np.mean(cross_val_score(rf, data, target, cv = selected_cv))}]**')
+    st.markdown(f'- Model Accuracy Score: &emsp; **:red[{rf.score(X_test, y_test)}]**')
+    st.markdown(f'- Cross-Validation Score (k = {selected_cv}): &nbsp; **:blue[{np.mean(cross_val_score(rf, data, target, cv = selected_cv))}]**')
+
+    st.write('')
 
     # Create classification report
     y_pred = rf.predict(X_test)
     report = classification_report(y_test, y_pred, output_dict = True)
     df = pd.DataFrame(report).transpose()
 
-    st.dataframe(pd.DataFrame(index = [0, 1], data = {'Label': ['Non-fraudulent firm', 'Fraudulent firm']}))
     st.markdown('##### Classification Report:')
-    st.dataframe(df, use_container_width = True)
+    report_table(df)
 
     st.markdown('---')
 
