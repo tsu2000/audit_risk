@@ -167,6 +167,8 @@ def eda(initial_data, cleaned_data):
     risk_count = risk_count.rename(index = {0: 'Non-fraudulent', 1: 'Fraudulent'})
     risk_count = risk_count.reset_index().rename(columns = {'index': 'Type', 'Risk': 'Count'})
 
+    st.write(risk_count)
+
     donut = alt.Chart(risk_count).mark_arc(innerRadius = 80).encode(
         theta = alt.Theta(field = 'Count', type = 'quantitative'),
         color = alt.Color(field = 'Type', type = 'nominal'),
