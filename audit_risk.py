@@ -89,7 +89,7 @@ def main():
     st.markdown('---')
 
     if options == 'Exploratory Data Analysis':
-        eda(cleaned_data = df)
+        eda(initial_data = df, cleaned_data = df2)
     elif options == 'K-Nearest Neighbours':
         knn_model(data = X, target = y)
     elif options == 'Naïve Bayes':
@@ -102,7 +102,7 @@ def main():
         rf_model(data = X, target = y)
     
 
-def eda(cleaned_data):
+def eda(initial_data, cleaned_data):
     st.markdown('## 🔎 &nbsp; Exploratory Data Analysis (EDA)')
 
     st.write('')
@@ -119,19 +119,16 @@ def eda(cleaned_data):
         st.markdown('- `Risk`: Whether the firm is fraudulent or not. (1 being fraudulent and 0 being not)')
 
     st.markdown('### Initial DataFrame:')
-    st.dataframe(cleaned_data)
-    st.write(f'Shape of data:', cleaned_data.shape)
+    st.dataframe(initial_data)
+    st.write(f'Shape of data:', initial_data.shape)
 
     st.markdown('### Summary Statistics:')
-    st.dataframe(cleaned_data.describe())
+    st.dataframe(initial_data.describe())
 
     st.markdown('### EDA Heatmap:')
     df = cleaned_data.drop(['Detection_Risk'], axis = 1)
-    st.write(df)
-    x = df.corr()
-    st.write(x)
+    df = df.corr().reset_index().rename(columns = {'index': 'Variable 1'})
     df = df.melt('Variable 1', var_name = 'Variable 2', value_name = 'Correlation')
-    st.write(df)
 
     base_chart = alt.Chart(df).encode(
         x = 'Variable 1',
