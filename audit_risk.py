@@ -165,6 +165,9 @@ def eda(initial_data, cleaned_data):
 
     risk_count = initial_data['Risk'].value_counts()
     risk_count = risk_count.rename(index = {0: 'Non-fraudulent', 1: 'Fraudulent'})
+
+    st.write(risk_count)
+    
     risk_count = risk_count.reset_index().rename(columns = {'index': 'Type', 'Risk': 'Count'})
 
     st.write(risk_count)
