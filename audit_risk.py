@@ -128,8 +128,8 @@ def eda(cleaned_data):
     st.markdown('### EDA Heatmap:')
     df = cleaned_data.drop(['Detection_Risk'], axis = 1)
     st.write(df)
-    df = df.corr().reset_index()
-    st.write(df)
+    x = df.corr()
+    st.write(x)
     df = df.melt('Variable 1', var_name = 'Variable 2', value_name = 'Correlation')
     st.write(df)
 
