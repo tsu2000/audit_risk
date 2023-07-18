@@ -126,8 +126,7 @@ def eda(initial_data, cleaned_data):
     st.dataframe(initial_data.describe())
 
     st.markdown('### EDA Heatmap:')
-    df = cleaned_data.drop(['Detection_Risk'], axis = 1)
-    df = df.corr().reset_index().rename(columns = {'index': 'Variable 1'})
+    df = cleaned_data.corr().reset_index().rename(columns = {'index': 'Variable 1'})
     df = df.melt('Variable 1', var_name = 'Variable 2', value_name = 'Correlation')
 
     base_chart = alt.Chart(df).encode(
