@@ -13,6 +13,6 @@ Current machine learning algorithms available in the app include:
 
 **Link to Web App**:
 
-[<img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg">](<https://audit-risk.streamlit.app>)
+[<img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg">](<https://audit-ml.streamlit.app>)
 
 
